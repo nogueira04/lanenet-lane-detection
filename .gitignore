@@ -5,3 +5,7 @@ log/
 
 # python cache
 *__pycache__*
+
+*tfrecords
+*ckpt
+*tfevents
