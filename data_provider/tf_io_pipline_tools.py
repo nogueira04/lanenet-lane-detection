@@ -58,7 +58,7 @@ def write_example_tfrecords(gt_images_paths, gt_binary_images_paths, gt_instance
 
     LOG.info('Writing {:s}....'.format(tfrecords_path))
 
-    with tf.python_io.TFRecordWriter(tfrecords_path) as _writer:
+    with tf.io.TFRecordWriter(tfrecords_path) as _writer:
         for _index, _gt_image_path in enumerate(gt_images_paths):
 
             # prepare gt image
@@ -112,28 +112,28 @@ def decode(serialized_example):
     :param serialized_example:
     :return:
     """
-    features = tf.parse_single_example(
+    features = tf.io.parse_single_example(
         serialized_example,
         # Defaults are not specified since both keys are required.
         features={
-            'gt_image_raw': tf.FixedLenFeature([], tf.string),
-            'gt_binary_image_raw': tf.FixedLenFeature([], tf.string),
-            'gt_instance_image_raw': tf.FixedLenFeature([], tf.string)
+            'gt_image_raw': tf.io.FixedLenFeature([], tf.string),
+            'gt_binary_image_raw': tf.io.FixedLenFeature([], tf.string),
+            'gt_instance_image_raw': tf.io.FixedLenFeature([], tf.string)
         })
 
     # decode gt image
     gt_image_shape = tf.stack([RESIZE_IMAGE_HEIGHT, RESIZE_IMAGE_WIDTH, 3])
-    gt_image = tf.decode_raw(features['gt_image_raw'], tf.uint8)
+    gt_image = tf.io.decode_raw(features['gt_image_raw'], tf.uint8)
     gt_image = tf.reshape(gt_image, gt_image_shape)
 
     # decode gt binary image
     gt_binary_image_shape = tf.stack([RESIZE_IMAGE_HEIGHT, RESIZE_IMAGE_WIDTH, 1])
-    gt_binary_image = tf.decode_raw(features['gt_binary_image_raw'], tf.uint8)
+    gt_binary_image = tf.io.decode_raw(features['gt_binary_image_raw'], tf.uint8)
     gt_binary_image = tf.reshape(gt_binary_image, gt_binary_image_shape)
 
     # decode gt instance image
     gt_instance_image_shape = tf.stack([RESIZE_IMAGE_HEIGHT, RESIZE_IMAGE_WIDTH, 1])
-    gt_instance_image = tf.decode_raw(features['gt_instance_image_raw'], tf.uint8)
+    gt_instance_image = tf.io.decode_raw(features['gt_instance_image_raw'], tf.uint8)
     gt_instance_image = tf.reshape(gt_instance_image, gt_instance_image_shape)
 
     return gt_image, gt_binary_image, gt_instance_image
@@ -250,7 +250,7 @@ def random_crop_batch_images(gt_image, gt_binary_image, gt_instance_image, cropp
     concat_cropped_images = tf.image.random_crop(
         concat_images,
         [cropped_size[1], cropped_size[0], tf.shape(concat_images)[-1]],
-        seed=tf.random.set_random_seed(1234)
+        seed=tf.compat.v1.random.set_random_seed(1234)
     )
 
     cropped_gt_image = tf.slice(
@@ -286,7 +286,7 @@ def random_horizon_flip_batch_images(gt_image, gt_binary_image, gt_instance_imag
 
     concat_flipped_images = tf.image.random_flip_left_right(
         image=concat_images,
-        seed=tf.random.set_random_seed(1)
+        seed=tf.compat.v1.random.set_random_seed(1)
     )
 
     flipped_gt_image = tf.slice(

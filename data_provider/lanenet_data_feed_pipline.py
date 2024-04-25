@@ -24,6 +24,8 @@ from data_provider import tf_io_pipline_tools
 CFG = parse_config_utils.lanenet_cfg
 LOG = loguru.logger
 
+tf.compat.v1.disable_v2_behavior()
+
 
 class LaneNetDataProducer(object):
     """
@@ -250,7 +252,7 @@ class LaneNetDataFeeder(object):
         assert ops.exists(tfrecords_file_paths), '{:s} not exist'.format(tfrecords_file_paths)
 
         sample_counts = 0
-        sample_counts += sum(1 for _ in tf.python_io.tf_record_iterator(tfrecords_file_paths))
+        sample_counts += sum(1 for _ in tf.compat.v1.python_io.tf_record_iterator(tfrecords_file_paths))
         if self._dataset_flags == 'train':
             num_batchs = int(np.ceil(sample_counts / self._train_batch_size))
         elif self._dataset_flags == 'val':
@@ -273,7 +275,7 @@ class LaneNetDataFeeder(object):
         assert ops.exists(tfrecords_file_paths), '{:s} not exist'.format(tfrecords_file_paths)
 
         with tf.device('/cpu:0'):
-            with tf.name_scope('input_tensor'):
+            with tf.compat.v1.name_scope('input_tensor'):
 
                 # TFRecordDataset opens a binary file and reads one record at a time.
                 # `tfrecords_file_paths` could also be a list of filenames, which will be read in order.
@@ -307,9 +309,9 @@ class LaneNetDataFeeder(object):
                 dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
                 dataset = dataset.prefetch(buffer_size=128)
 
-                iterator = dataset.make_one_shot_iterator()
+                iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
 
-        return iterator.get_next(name='{:s}_IteratorGetNext'.format(self._dataset_flags))
+        return iterator.get_next(f'{self._dataset_flags}_IteratorGetNext')
 
 
 if __name__ == '__main__':
@@ -321,7 +323,7 @@ if __name__ == '__main__':
     src_images, binary_label_images, instance_label_images = train_dataset.next_batch(batch_size=8)
 
     count = 1
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         while True:
             try:
                 t_start = time.time()

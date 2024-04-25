@@ -46,9 +46,9 @@ def discriminative_loss_single(
     num_instances = tf.size(unique_labels)
 
     # calculate instance pixel embedding mean vec
-    segmented_sum = tf.unsorted_segment_sum(
+    segmented_sum = tf.math.unsorted_segment_sum(
         reshaped_pred, unique_id, num_instances)
-    mu = tf.div(segmented_sum, tf.reshape(counts, (-1, 1)))
+    mu = tf.compat.v1.div(segmented_sum, tf.reshape(counts, (-1, 1)))
     mu_expand = tf.gather(mu, unique_id)
 
     distance = tf.norm(tf.subtract(mu_expand, reshaped_pred), axis=1, ord=1)
@@ -56,8 +56,8 @@ def discriminative_loss_single(
     distance = tf.clip_by_value(distance, 0., distance)
     distance = tf.square(distance)
 
-    l_var = tf.unsorted_segment_sum(distance, unique_id, num_instances)
-    l_var = tf.div(l_var, counts)
+    l_var = tf.math.unsorted_segment_sum(distance, unique_id, num_instances)
+    l_var = tf.compat.v1.div(l_var, counts)
     l_var = tf.reduce_sum(l_var)
     l_var = tf.divide(l_var, tf.cast(num_instances, tf.float32))
 
@@ -127,7 +127,7 @@ def discriminative_loss(prediction, correct_label, feature_dim, image_shape,
         dtype=tf.float32, size=0, dynamic_size=True)
 
     _, _, out_loss_op, out_var_op, out_dist_op, out_reg_op, _ = tf.while_loop(
-        cond, body, [
+        cond=cond, body=body, loop_vars=[
             correct_label, prediction, output_ta_loss, output_ta_var, output_ta_dist, output_ta_reg, 0])
     out_loss_op = out_loss_op.stack()
     out_var_op = out_var_op.stack()

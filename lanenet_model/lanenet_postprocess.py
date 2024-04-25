@@ -332,6 +332,15 @@ class LaneNetPostProcessor(object):
             instance_seg_result=instance_seg_result
         )
 
+        # median blur
+        blurred_mask = cv2.medianBlur(mask_image, 5)
+
+        # erosão e dlitação
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (16, 16))  # Adjust kernel size and shape
+        dilated_mask = cv2.dilate(blurred_mask, kernel)
+        eroded_mask = cv2.erode(dilated_mask, kernel)
+        mask_image = eroded_mask
+
         if mask_image is None:
             return {
                 'mask_image': None,

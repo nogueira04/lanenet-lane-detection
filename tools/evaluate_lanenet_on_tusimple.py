@@ -53,22 +53,22 @@ def eval_lanenet(src_dir, weights_path, save_dir):
 
     os.makedirs(save_dir, exist_ok=True)
 
-    input_tensor = tf.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
+    input_tensor = tf.compat.v1.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
 
     net = lanenet.LaneNet(phase='test', cfg=CFG)
     binary_seg_ret, instance_seg_ret = net.inference(input_tensor=input_tensor, name='LaneNet')
 
     postprocessor = lanenet_postprocess.LaneNetPostProcessor(cfg=CFG)
 
-    saver = tf.train.Saver()
+    saver = tf.compat.v1.train.Saver()
 
     # Set sess configuration
-    sess_config = tf.ConfigProto()
+    sess_config = tf.compat.v1.ConfigProto()
     sess_config.gpu_options.per_process_gpu_memory_fraction = CFG.GPU.GPU_MEMORY_FRACTION
     sess_config.gpu_options.allow_growth = CFG.GPU.TF_ALLOW_GROWTH
     sess_config.gpu_options.allocator_type = 'BFC'
 
-    sess = tf.Session(config=sess_config)
+    sess = tf.compat.v1.Session(config=sess_config)
 
     with sess.as_default():
 
@@ -93,6 +93,7 @@ def eval_lanenet(src_dir, weights_path, save_dir):
             postprocess_result = postprocessor.postprocess(
                 binary_seg_result=binary_seg_image[0],
                 instance_seg_result=instance_seg_image[0],
+                with_lane_fit=False,
                 source_image=image_vis
             )
 
@@ -100,7 +101,7 @@ def eval_lanenet(src_dir, weights_path, save_dir):
                 LOG.info('Mean inference time every single image: {:.5f}s'.format(np.mean(avg_time_cost)))
                 avg_time_cost.clear()
 
-            input_image_dir = ops.split(image_path.split('clips')[1])[0][1:]
+            input_image_dir = ops.split(image_path.split('teste')[1])[0][1:]
             input_image_name = ops.split(image_path)[1]
             output_image_dir = ops.join(save_dir, input_image_dir)
             os.makedirs(output_image_dir, exist_ok=True)

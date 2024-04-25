@@ -44,37 +44,37 @@ def convert_ckpt_into_pb_file(ckpt_file_path, pb_file_path):
     :return:
     """
     # construct compute graph
-    with tf.variable_scope('lanenet'):
-        input_tensor = tf.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
+    with tf.compat.v1.variable_scope('lanenet'):
+        input_tensor = tf.compat.v1.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
 
     net = lanenet.LaneNet(phase='test', cfg=CFG)
     binary_seg_ret, instance_seg_ret = net.inference(input_tensor=input_tensor, name='LaneNet')
 
-    with tf.variable_scope('lanenet/'):
+    with tf.compat.v1.variable_scope('lanenet/'):
         binary_seg_ret = tf.cast(binary_seg_ret, dtype=tf.float32)
         binary_seg_ret = tf.squeeze(binary_seg_ret, axis=0, name='final_binary_output')
         instance_seg_ret = tf.squeeze(instance_seg_ret, axis=0, name='final_pixel_embedding_output')
 
     # define moving average version of the learned variables for eval
-    with tf.variable_scope(name_or_scope='moving_avg'):
+    with tf.compat.v1.variable_scope(name_or_scope='moving_avg'):
         variable_averages = tf.train.ExponentialMovingAverage(
             CFG.SOLVER.MOVING_AVE_DECAY)
         variables_to_restore = variable_averages.variables_to_restore()
 
     # create a session
-    saver = tf.train.Saver(variables_to_restore)
+    saver = tf.compat.v1.train.Saver(variables_to_restore)
 
-    sess_config = tf.ConfigProto()
+    sess_config = tf.compat.v1.ConfigProto()
     sess_config.gpu_options.per_process_gpu_memory_fraction = 0.85
     sess_config.gpu_options.allow_growth = False
     sess_config.gpu_options.allocator_type = 'BFC'
 
-    sess = tf.Session(config=sess_config)
+    sess = tf.compat.v1.Session(config=sess_config)
 
     with sess.as_default():
         saver.restore(sess, ckpt_file_path)
 
-        converted_graph_def = tf.graph_util.convert_variables_to_constants(
+        converted_graph_def = tf.compat.v1.graph_util.convert_variables_to_constants(
             sess,
             input_graph_def=sess.graph.as_graph_def(),
             output_node_names=[
@@ -84,7 +84,7 @@ def convert_ckpt_into_pb_file(ckpt_file_path, pb_file_path):
             ]
         )
 
-        with tf.gfile.GFile(pb_file_path, "wb") as f:
+        with tf.io.gfile.GFile(pb_file_path, "wb") as f:
             f.write(converted_graph_def.SerializeToString())
 
 

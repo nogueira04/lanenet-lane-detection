@@ -55,7 +55,7 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
         """
         loss_weights = tf.reduce_sum(tf.multiply(onehot_labels, classes_weights), axis=3)
 
-        loss = tf.losses.softmax_cross_entropy(
+        loss = tf.compat.v1.losses.softmax_cross_entropy(
             onehot_labels=onehot_labels,
             logits=logits,
             weights=loss_weights
@@ -78,10 +78,10 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
         alpha = tf.cast(alpha, tf.float32)
         gamma = float(gamma)
         y_true = tf.cast(onehot_labels, tf.float32)
-        y_pred = tf.nn.softmax(logits, dim=-1)
+        y_pred = tf.nn.softmax(logits, axis=-1)
         y_pred = tf.clip_by_value(y_pred, epsilon, 1. - epsilon)
         y_t = tf.multiply(y_true, y_pred) + tf.multiply(1-y_true, 1-y_pred)
-        ce = -tf.log(y_t)
+        ce = -tf.math.log(y_t)
         weight = tf.pow(tf.subtract(1., y_t), gamma)
         fl = tf.multiply(tf.multiply(weight, ce), alpha)
         loss = tf.reduce_mean(fl)
@@ -101,9 +101,9 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
         :param reuse:
         :return:
         """
-        with tf.variable_scope(name_or_scope=name, reuse=reuse):
+        with tf.compat.v1.variable_scope(name_or_scope=name, reuse=reuse):
             # calculate class weighted binary seg loss
-            with tf.variable_scope(name_or_scope='binary_seg'):
+            with tf.compat.v1.variable_scope(name_or_scope='binary_seg'):
                 binary_label_onehot = tf.one_hot(
                     tf.reshape(
                         tf.cast(binary_label, tf.int32),
@@ -124,7 +124,7 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
                 counts = tf.cast(counts, tf.float32)
                 inverse_weights = tf.divide(
                     1.0,
-                    tf.log(tf.add(tf.divide(counts, tf.reduce_sum(counts)), tf.constant(1.02)))
+                    tf.math.log(tf.add(tf.divide(counts, tf.reduce_sum(counts)), tf.constant(1.02)))
                 )
                 if self._binary_loss_type == 'cross_entropy':
                     binary_segmenatation_loss = self._compute_class_weighted_cross_entropy_loss(
@@ -142,7 +142,7 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
                     raise NotImplementedError
 
             # calculate class weighted instance seg loss
-            with tf.variable_scope(name_or_scope='instance_seg'):
+            with tf.compat.v1.variable_scope(name_or_scope='instance_seg'):
 
                 pix_bn = self.layerbn(
                     inputdata=instance_seg_logits, is_training=self._is_training, name='pix_bn')
@@ -162,7 +162,7 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
                     )
 
             l2_reg_loss = tf.constant(0.0, tf.float32)
-            for vv in tf.trainable_variables():
+            for vv in tf.compat.v1.trainable_variables():
                 if 'bn' in vv.name or 'gn' in vv.name:
                     continue
                 else:
@@ -189,13 +189,13 @@ class LaneNetBackEnd(cnn_basenet.CNNBaseModel):
         :param reuse:
         :return:
         """
-        with tf.variable_scope(name_or_scope=name, reuse=reuse):
+        with tf.compat.v1.variable_scope(name_or_scope=name, reuse=reuse):
 
-            with tf.variable_scope(name_or_scope='binary_seg'):
+            with tf.compat.v1.variable_scope(name_or_scope='binary_seg'):
                 binary_seg_score = tf.nn.softmax(logits=binary_seg_logits)
                 binary_seg_prediction = tf.argmax(binary_seg_score, axis=-1)
 
-            with tf.variable_scope(name_or_scope='instance_seg'):
+            with tf.compat.v1.variable_scope(name_or_scope='instance_seg'):
 
                 pix_bn = self.layerbn(
                     inputdata=instance_seg_logits, is_training=self._is_training, name='pix_bn')
